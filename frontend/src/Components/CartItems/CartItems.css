@@ -72,7 +72,8 @@
 .cartitems-down {
   display: flex;
   margin: 100px 0;
-  gap: 100px;
+  gap: 50px;
+  flex-wrap: wrap;
 }
 
 .cartitems-total {
@@ -80,6 +81,7 @@
   display: flex;
   flex-direction: column;
   gap: 40px;
+  min-width: 300px;
   max-width: 500px;
 }
 
@@ -142,62 +144,103 @@
   transform: translateY(0);
 }
 
-/* Promo Code Section 
-.cartitems-promocode {
+/* Bank Details Section */
+.cartitems-bank-details {
   flex: 1;
+  min-width: 300px;
   max-width: 500px;
+  background: #fff;
+  padding: 0;
+  margin-left:100px;
 }
 
-.cartitems-promocode p {
-  color: #555;
-  margin-bottom: 15px;
-  font-size: 16px;
-  font-weight: 500;
-}
-
-.cartitems-promobox {
+.cartitems-bank-details h2 {
+  font-size: 26px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 25px 0;
   display: flex;
   align-items: center;
-  width: 100%;
-  max-width: 504px;
-  height: 58px;
-  background: #eaeaea;
-  border-radius: 6px;
-  overflow: hidden;
+  gap: 10px;
 }
 
-.cartitems-promobox input {
-  flex: 1;
-  border: none;
-  outline: none;
-  background: transparent;
+.cartitems-bank-details h2::before {
+  content: "🏦";
+  font-size: 28px;
+}
+
+.bank-details-box {
+  background: linear-gradient(135deg, #fff5f5 0%, #ffe5e5 100%);
+  border-left: 4px solid #ff5a5a;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.bank-details-title {
   font-size: 16px;
-  padding: 0 20px;
-  height: 100%;
-  color: #454545;
-}
-
-.cartitems-promobox input::placeholder {
-  color: #999;
-  text-transform: capitalize;
-}
-
-.cartitems-promobox button {
-  width: 170px;
-  height: 100%;
-  font-size: 16px;
-  background: #262626;
-  color: white;
-  cursor: pointer;
-  border: none;
-  transition: background 0.3s ease;
-  text-transform: capitalize;
   font-weight: 600;
+  color: #666;
+  margin: 0 0 20px 0;
 }
 
-.cartitems-promobox button:hover {
-  background: #000;
-}*/
+.bank-info {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.bank-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 90, 90, 0.15);
+}
+
+.bank-info-row:last-child {
+  border-bottom: none;
+}
+
+.bank-label {
+  font-weight: 600;
+  color: #ff5a5a;
+  font-size: 14px;
+  min-width: 140px;
+}
+
+.bank-value {
+  font-weight: 700;
+  color: #333;
+  font-size: 15px;
+  text-align: right;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.5px;
+}
+
+.payment-instructions {
+  margin-top: 25px;
+  padding-top: 25px;
+  border-top: 2px dashed #ff5a5a;
+}
+
+.payment-instructions p {
+  font-size: 13px;
+  color: #666;
+  margin: 10px 0;
+  line-height: 1.7;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.payment-instructions p::before {
+  content: "•";
+  color: #ff5a5a;
+  font-weight: bold;
+  font-size: 16px;
+}
 
 /* Tablet Responsive (1280px and below) */
 @media (max-width: 1280px) {
@@ -249,16 +292,16 @@
     font-size: 15px;
   }
 
-  .cartitems-promocode {
+  .cartitems-bank-details {
     max-width: 100%;
   }
 
-  .cartitems-promobox {
-    max-width: 100%;
+  .cartitems-bank-details h2 {
+    font-size: 22px;
   }
 
-  .cartitems-promobox button {
-    width: 150px;
+  .bank-details-box {
+    padding: 25px;
   }
 }
 
@@ -320,17 +363,31 @@
     font-size: 14px;
   }
 
-  .cartitems-promobox {
-    height: 52px;
+  .cartitems-bank-details h2 {
+    font-size: 20px;
   }
 
-  .cartitems-promobox input {
-    font-size: 14px;
+  .bank-details-box {
+    padding: 20px;
   }
 
-  .cartitems-promobox button {
-    width: 130px;
-    font-size: 14px;
+  .bank-info-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+    padding: 10px 0;
+  }
+
+  .bank-label {
+    min-width: auto;
+  }
+
+  .bank-value {
+    text-align: left;
+  }
+
+  .payment-instructions p {
+    font-size: 12px;
   }
 }
 
@@ -398,21 +455,48 @@
     max-width: 100%;
   }
 
-  .cartitems-promocode p {
+  .cartitems-bank-details {
+    min-width: 100%;
+  }
+
+  .cartitems-bank-details h2 {
+    font-size: 18px;
+  }
+
+  .cartitems-bank-details h2::before {
+    font-size: 22px;
+  }
+
+  .bank-details-box {
+    padding: 18px;
+  }
+
+  .bank-details-title {
+    font-size: 14px;
+  }
+
+  .bank-info {
+    gap: 12px;
+  }
+
+  .bank-info-row {
+    padding: 8px 0;
+  }
+
+  .bank-label {
     font-size: 13px;
   }
 
-  .cartitems-promobox {
-    height: 48px;
-  }
-
-  .cartitems-promobox input {
+  .bank-value {
     font-size: 13px;
-    padding: 0 12px;
   }
 
-  .cartitems-promobox button {
-    width: 100px;
-    font-size: 12px;
+  .payment-instructions {
+    margin-top: 20px;
+    padding-top: 20px;
+  }
+
+  .payment-instructions p {
+    font-size: 11px;
   }
 }
