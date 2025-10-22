@@ -72,7 +72,7 @@ const Orders = () => {
             <div className="order-details">
               <p><strong>Customer:</strong> {order.customerName}</p>
               <p><strong>Email:</strong> {order.customerEmail}</p>
-              <p><strong>Total:</strong> ${order.total}</p>
+              <p><strong>Total:</strong> Rs {order.total}</p>
               <p><strong>Date:</strong> {new Date(order.orderDate).toLocaleDateString()}</p>
             </div>
 
@@ -81,7 +81,7 @@ const Orders = () => {
               {order.items.map((item, index) => (
                 <div key={index} className="item">
                   <span>{item.name} x {item.quantity}</span>
-                  <span>${item.total}</span>
+                  <span>Rs {item.total}</span>
                 </div>
               ))}
             </div>
@@ -92,7 +92,9 @@ const Orders = () => {
                 <a href={order.receiptUrl} target="_blank" rel="noopener noreferrer">
                   <button className="view-receipt-btn">View Receipt</button>
                 </a>
+                
                 <img src={order.receiptUrl} alt="Receipt" className="receipt-preview" />
+                
               </div>
             ) : (
               <div className="receipt-section">
