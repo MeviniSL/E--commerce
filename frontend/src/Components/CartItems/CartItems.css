@@ -121,8 +121,8 @@
   height: 58px;
   outline: none;
   border: none;
-  background: #ff5a5a;
-  color: #fff;
+  background: #FFB6B6;
+  color: #373535ff;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
@@ -133,7 +133,7 @@
 }
 
 .cartitems-total button:hover {
-  background: #ff3333;
+  background: #C5A35A;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(255, 90, 90, 0.3);
 }
@@ -142,7 +142,7 @@
   transform: translateY(0);
 }
 
-/* Promo Code Section */
+/* Promo Code Section 
 .cartitems-promocode {
   flex: 1;
   max-width: 500px;
@@ -197,7 +197,7 @@
 
 .cartitems-promobox button:hover {
   background: #000;
-}
+}*/
 
 /* Tablet Responsive (1280px and below) */
 @media (max-width: 1280px) {

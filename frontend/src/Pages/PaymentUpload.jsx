@@ -51,7 +51,7 @@ const PaymentUpload = () => {
   return (
     <div className='payment-upload'>
       <div className="payment-upload-container">
-        <h1>Upload Payment Receipt</h1>
+        <h1>Please upload your Payment Receipt</h1>
         <p>Order ID: {orderId}</p>
         <div className="upload-section">
           <input type="file" accept="image/*,application/pdf" onChange={handleFileChange} />
