@@ -115,6 +115,32 @@ app.post('/addproduct', async (req, res) => {
   }
 });
 
+
+
+
+//creating middleware to fetch user
+const fetchUser = async (req,res,next)=>{
+    const token = req.header('auth-token');
+    if(!token){
+        res.status(401).send({errors:"Please authenticate using valid token"})
+    }
+    else{
+        try{
+            const data = jwt.verify(token,'secret_ecom');
+            req.user = data.user;
+            next();
+
+        }catch(error){
+            res.status(401).send({errors:"Please authenticate using valid token"})
+
+        }
+    }
+
+}
+
+
+
+
 // creating api for deleting product
 
 app.post('/removeproduct',async (req,res)=>{
@@ -156,6 +182,204 @@ const Users = mongoose.model('Users',{
         default:Date.now,
     }
 })
+
+
+
+// Add this after the Users schema
+
+const Order = mongoose.model('Order', {
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Users',
+    required: true
+  },
+  items: [{
+    productId: Number,
+    name: String,
+    quantity: Number,
+    price: Number,
+    total: Number
+  }],
+  subtotal: Number,
+  total: Number,
+  orderDate: {
+    type: Date,
+    default: Date.now
+  },
+  status: {
+    type: String,
+    enum: ['Pending', 'Payment Uploaded', 'Verified', 'Completed', 'Cancelled'],
+    default: 'Pending'
+  },
+  receiptUrl: String,
+  customerName: String,
+  customerEmail: String
+});
+// Add these endpoints
+
+const PDFDocument = require('pdfkit');
+const fs = require('fs');
+
+// Create Order and Generate Invoice
+app.post('/createorder', fetchUser, async (req, res) => {
+  try {
+    const user = await Users.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const { items, subtotal, total } = req.body;
+
+    // Create order
+    const order = new Order({
+      userId: user._id,
+      items,
+      subtotal,
+      total,
+      customerName: user.name,
+      customerEmail: user.email,
+      status: 'Pending'
+    });
+
+    await order.save();
+
+    // Generate PDF Invoice
+    const doc = new PDFDocument();
+    const invoicePath = `./upload/invoices/invoice_${order._id}.pdf`;
+
+    // Create invoices directory if it doesn't exist
+    if (!fs.existsSync('./upload/invoices')) {
+      fs.mkdirSync('./upload/invoices', { recursive: true });
+    }
+
+    doc.pipe(fs.createWriteStream(invoicePath));
+
+    // Add content to PDF
+    doc.fontSize(20).text('INVOICE', { align: 'center' });
+    doc.moveDown();
+    doc.fontSize(12).text(`Order ID: ${order._id}`);
+    doc.text(`Customer: ${user.name}`);
+    doc.text(`Email: ${user.email}`);
+    doc.text(`Date: ${new Date().toLocaleDateString()}`);
+    doc.moveDown();
+
+    doc.text('Items:', { underline: true });
+    items.forEach((item, index) => {
+      doc.text(`${index + 1}. ${item.name} x ${item.quantity} = $${item.total}`);
+    });
+
+    doc.moveDown();
+    doc.text(`Subtotal: $${subtotal}`);
+    doc.text(`Total: $${total}`, { bold: true });
+
+    doc.end();
+
+    res.json({ success: true, orderId: order._id });
+  } catch (error) {
+    console.error('Error creating order:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+// Download Invoice
+app.get('/invoice/:orderId', async (req, res) => {
+  try {
+    const invoicePath = `./upload/invoices/invoice_${req.params.orderId}.pdf`;
+    
+    if (fs.existsSync(invoicePath)) {
+      res.download(invoicePath);
+    } else {
+      res.status(404).json({ success: false, message: 'Invoice not found' });
+    }
+  } catch (error) {
+    console.error('Error downloading invoice:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+// Add multer configuration for receipt uploads
+
+const receiptStorage = multer.diskStorage({
+  destination: './upload/receipts',
+  filename: (req, file, cb) => {
+    return cb(null, `${Date.now()}_${file.originalname}`);
+  }
+});
+
+const receiptUpload = multer({ storage: receiptStorage });
+
+// Create receipts directory
+if (!fs.existsSync('./upload/receipts')) {
+  fs.mkdirSync('./upload/receipts', { recursive: true });
+}
+
+// Upload Receipt
+app.post('/uploadreceipt', fetchUser, receiptUpload.single('receipt'), async (req, res) => {
+  try {
+    const { orderId } = req.body;
+
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    // Check if order belongs to the user
+    if (order.userId.toString() !== req.user.id) {
+      return res.status(403).json({ success: false, message: 'Unauthorized' });
+    }
+
+    order.receiptUrl = `http://localhost:${port}/receipts/${req.file.filename}`;
+    order.status = 'Payment Uploaded';
+    await order.save();
+
+    res.json({ success: true, message: 'Receipt uploaded successfully' });
+  } catch (error) {
+    console.error('Error uploading receipt:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+// Serve receipt files
+app.use('/receipts', express.static('upload/receipts'));
+
+// Get all orders (for admin)
+app.get('/orders', async (req, res) => {
+  try {
+    const orders = await Order.find({}).sort({ orderDate: -1 });
+    res.json({ success: true, orders });
+  } catch (error) {
+    console.error('Error fetching orders:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+// Update order status
+app.put('/orders/:id', async (req, res) => {
+  try {
+    const { status } = req.body;
+    const order = await Order.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    );
+    
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+    
+    res.json({ success: true, order });
+  } catch (error) {
+    console.error('Error updating order:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+
+
+
+
+
+
+
 
 //creating endpoint for registering user
 app.post('/signup',async(req,res)=>{
@@ -230,27 +454,6 @@ app.get('/popularinwomen',async(req,res)=>{
     console.log("Popular in women fetched.")
     res.send(popular_in_women);
 })
-
-//creating middleware to fetch user
-const fetchUser = async (req,res,next)=>{
-    const token = req.header('auth-token');
-    if(!token){
-        res.status(401).send({errors:"Please authenticate using valid token"})
-    }
-    else{
-        try{
-            const data = jwt.verify(token,'secret_ecom');
-            req.user = data.user;
-            next();
-
-        }catch(error){
-            res.status(401).send({errors:"Please authenticate using valid token"})
-
-        }
-    }
-
-}
-
 
 
 
