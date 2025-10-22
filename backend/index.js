@@ -9,6 +9,9 @@ const multer = require("multer");
 const path = require("path");
 const cors = require("cors");
 const { type } = require("os");
+const PDFDocument = require('pdfkit');  // ADD THIS LINE
+const fs = require('fs');                // ADD THIS LINE
+
 
 app.use(express.json());
 app.use(cors());
@@ -162,7 +165,7 @@ const Users = mongoose.model('Users',{
 })
 
 // Order Schema with Delivery Address and Payment Method
-const Order = mongoose.model('Order', {
+/*const Order = mongoose.model('Order', {
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Users',
@@ -202,9 +205,67 @@ const Order = mongoose.model('Order', {
     postalCode: String,
     phone: String
   }
+});*/
+// Order Schema with Delivery Address and Payment Method
+const Order = mongoose.model('Order', {
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Users',
+    required: true
+  },
+  items: [{
+    productId: Number,
+    name: String,
+    size: String,
+    quantity: Number,
+    price: Number,
+    total: Number
+  }],
+  subtotal: Number,
+  total: Number,
+  orderDate: {
+    type: Date,
+    default: Date.now
+  },
+  status: {
+    type: String,
+    enum: ['Pending', 'Payment Uploaded', 'Cash on Delivery', 'Verified', 'Completed', 'Cancelled'],
+    default: 'Pending'
+  },
+  paymentMethod: {
+    type: String,
+    enum: ['Bank Transfer', 'COD'],
+    default: 'Bank Transfer'
+  },
+  receiptUrl: String,
+  customerName: String,
+  customerEmail: String,
+  deliveryAddress: {
+    fullName: String,
+    address: String,
+    city: String,
+    postalCode: String,
+    phone: String
+  },
+  // ADD THESE TWO NEW FIELDS
+  invoiceData: {
+    type: Buffer  // Store PDF as binary data
+  },
+  invoiceGenerated: {
+    type: Boolean,
+    default: false
+  }
 });
 
-const PDFDocument = require('pdfkit');
+
+
+
+
+
+
+
+
+/*const PDFDocument = require('pdfkit');
 const fs = require('fs');
 
 // Create Order and Generate Invoice
@@ -402,10 +463,235 @@ app.post('/createorder', fetchUser, async (req, res) => {
     console.error('Error creating order:', error);
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
+});*/
+// Create Order and Generate Invoice
+app.post('/createorder', fetchUser, async (req, res) => {
+  try {
+    const user = await Users.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const { items, subtotal, total } = req.body;
+
+    const order = new Order({
+      userId: user._id,
+      items,
+      subtotal,
+      total,
+      customerName: user.name,
+      customerEmail: user.email,
+      status: 'Pending'
+    });
+
+    await order.save();
+
+    // CHANGE: Generate PDF in memory instead of file
+    const doc = new PDFDocument({
+      margin: 50,
+      size: 'A4'
+    });
+
+    // CHANGE: Store PDF chunks in array instead of file
+    const chunks = [];
+
+    doc.on('data', (chunk) => {
+      chunks.push(chunk);
+    });
+
+    doc.on('end', async () => {
+      try {
+        // CHANGE: Combine chunks into Buffer and save to database
+        const pdfBuffer = Buffer.concat(chunks);
+        
+        order.invoiceData = pdfBuffer;
+        order.invoiceGenerated = true;
+        await order.save();
+
+        console.log('✅ Invoice saved to database for order:', order._id);
+        res.json({ success: true, orderId: order._id });
+      } catch (error) {
+        console.error('Error saving invoice to database:', error);
+        res.status(500).json({ success: false, message: 'Failed to save invoice' });
+      }
+    });
+
+    // PDF GENERATION CODE (same as before)
+    doc
+      .fontSize(26)
+      .font('Helvetica-Bold')
+      .fillColor('#FF5A5A')
+      .text('STREETSOUL', 50, 50);
+
+    doc
+      .fontSize(10)
+      .font('Helvetica')
+      .fillColor('#666')
+      .text('StreetSoul building | 123 Kalutara South', 50, 80)
+      .text('Phone: +1 234 567 8900 | mail@streetsoul.com', 50, 93);
+
+    doc
+      .fontSize(24)
+      .font('Helvetica-Bold')
+      .fillColor('#333')
+      .text('INVOICE', 400, 50, { align: 'right' });
+
+    doc
+      .strokeColor('#ddd')
+      .lineWidth(1)
+      .moveTo(50, 115)
+      .lineTo(550, 115)
+      .stroke();
+
+    let y = 130;
+
+    doc
+      .fontSize(10)
+      .font('Helvetica-Bold')
+      .fillColor('#333')
+      .text('Invoice Number:', 50, y)
+      .font('Helvetica')
+      .fillColor('#666')
+      .text(` ${order._id.toString().slice(-8).toUpperCase()}`, 140, y);
+
+    y += 12;
+    doc
+      .font('Helvetica-Bold')
+      .fillColor('#333')
+      .text('Invoice Date:', 50, y)
+      .font('Helvetica')
+      .fillColor('#666')
+      .text(new Date().toLocaleDateString(), 140, y);
+
+    y += 12;
+    doc
+      .font('Helvetica-Bold')
+      .fillColor('#333')
+      .text('Order ID:', 50, y)
+      .font('Helvetica')
+      .fillColor('#666')
+      .text(order._id.toString(), 140, y);
+
+    y = 130;
+    doc
+      .font('Helvetica-Bold')
+      .fillColor('#333')
+      .text('Bill To:', 350, y);
+    y += 15;
+    doc
+      .font('Helvetica-Bold')
+      .text(user.name, 350, y);
+    y += 12;
+    doc
+      .font('Helvetica')
+      .fillColor('#666')
+      .text(user.email, 350, y);
+
+    y = 190;
+    doc
+      .rect(50, y, 500, 20)
+      .fillAndStroke('#FF5A5A', '#FF5A5A');
+
+    doc
+      .fontSize(10)
+      .font('Helvetica-Bold')
+      .fillColor('#FFF')
+      .text('Item', 60, y + 5)
+      .text('Qty', 310, y + 5)
+      .text('Price', 370, y + 5)
+      .text('Total', 460, y + 5);
+
+    y += 25;
+
+    items.forEach((item, index) => {
+      if (y > 550) return;
+      const bg = index % 2 === 0 ? '#FAFAFA' : '#FFF';
+      doc.rect(50, y - 3, 500, 20).fill(bg);
+      doc
+        .fontSize(10)
+        .fillColor('#333')
+        .text(item.name, 60, y)
+        .text(item.quantity.toString(), 310, y)
+        .text(`Rs ${item.price.toFixed(2)}`, 370, y)
+        .text(`Rs ${item.total.toFixed(2)}`, 460, y);
+      y += 20;
+    });
+
+    y += 10;
+    doc
+      .strokeColor('#ddd')
+      .moveTo(350, y)
+      .lineTo(550, y)
+      .stroke();
+
+    y += 10;
+    doc
+      .font('Helvetica')
+      .fillColor('#666')
+      .text('Subtotal:', 370, y)
+      .font('Helvetica-Bold')
+      .fillColor('#333')
+      .text(`Rs ${subtotal.toFixed(2)}`, 470, y);
+
+    y += 15;
+    doc
+      .font('Helvetica')
+      .fillColor('#666')
+      .text('Shipping:', 370, y)
+      .font('Helvetica-Bold')
+      .fillColor('#333')
+      .text('FREE', 470, y);
+
+    y += 15;
+    doc
+      .rect(370, y, 180, 25)
+      .fillAndStroke('#FFE5E5', '#FFE5E5');
+    doc
+      .fontSize(12)
+      .font('Helvetica-Bold')
+      .fillColor('#FF5A5A')
+      .text('TOTAL', 380, y + 7)
+      .text(`Rs ${total.toFixed(2)}`, 470, y + 7);
+
+    doc
+      .fontSize(10)
+      .font('Helvetica-Oblique')
+      .fillColor('#999')
+      .text('Thank you for shopping with StreetSoul!', 50, 740, {
+        align: 'center',
+        width: 500
+      });
+
+    // CHANGE: End document to trigger 'end' event
+    doc.end();
+
+  } catch (error) {
+    console.error('Error creating order:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
 });
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // Download Invoice
-app.get('/invoice/:orderId', async (req, res) => {
+/*app.get('/invoice/:orderId', async (req, res) => {
   try {
     const invoicePath = `./upload/invoices/invoice_${req.params.orderId}.pdf`;
     if (fs.existsSync(invoicePath)) {
@@ -417,7 +703,35 @@ app.get('/invoice/:orderId', async (req, res) => {
     console.error('Error downloading invoice:', error);
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
+});*/
+// Download Invoice from Database
+app.get('/invoice/:orderId', async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.orderId);
+    
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    if (!order.invoiceData || !order.invoiceGenerated) {
+      return res.status(404).json({ success: false, message: 'Invoice not generated yet' });
+    }
+
+    // Send PDF from database
+    res.contentType('application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=invoice_${order._id}.pdf`);
+    res.send(order.invoiceData);
+
+  } catch (error) {
+    console.error('Error downloading invoice:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
 });
+
+
+
+
+
 
 // Receipt upload configuration
 const receiptStorage = multer.diskStorage({
