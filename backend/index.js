@@ -9,8 +9,8 @@ const multer = require("multer");
 const path = require("path");
 const cors = require("cors");
 const { type } = require("os");
-const PDFDocument = require('pdfkit');  // ADD THIS LINE
-const fs = require('fs');                // ADD THIS LINE
+const PDFDocument = require('pdfkit'); 
+const fs = require('fs');                
 
 
 app.use(express.json());
