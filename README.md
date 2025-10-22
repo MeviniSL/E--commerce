@@ -22,3 +22,13 @@ Admin Login Credentials:
 Email: admin@gmail.com
 
 Password: admin@123
+
+Tech Stack
+
+Frontend: React.js, CSS
+
+Backend: Node.js, Express.js
+
+Database: MongoDB
+
+Authentication: JWT
