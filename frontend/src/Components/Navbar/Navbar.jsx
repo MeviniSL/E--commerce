@@ -5,6 +5,8 @@ import cart_icomn from '../Assests/cart_icon.png'
 import { Link } from 'react-router-dom'
 import { ShopContext } from '../../Context/ShopContext'
 import nav_dropdwon from '../Assests/nav_dropdown.png'
+import new_logo from '../Assests/S&S.png'
+
 
 const Navbar = () => {
 
@@ -20,15 +22,15 @@ const Navbar = () => {
   return (
       <div className='navbar'>
         <div className='nav-logo'>
-          <img src={logo} alt =""></img>
+          <img src={new_logo} alt =""></img>
           <p>StreetSoul</p>
       </div>
       <img className="nav-dropdown" onClick={dropdwon_toggle} src={nav_dropdwon} alt="" />
       <ul ref={menuRef} className='nav-menu'>
-        <li onClick={()=>{setMenu("shop")}}><Link style={{textDecoration:'none'}} to='/'>Shop{menu==="shop"?<hr />:<></>}</Link></li>
-        <li onClick={()=>{setMenu("men")}}><Link style={{textDecoration:'none'}} to='/mens'>Men{menu==="men"?<hr />:<></>}</Link></li>
-        <li onClick={()=>{setMenu("women")}}><Link style={{textDecoration:'none'}} to='/womens'>Women{menu==="women"?<hr />:<></>}</Link></li>
-        <li onClick={()=>{setMenu("kids")}}><Link style={{textDecoration:'none'}} to='/kids'>Kids{menu==="kids"?<hr />:<></>}</Link></li>
+        <li onClick={()=>{setMenu("shop")}}><Link style={{textDecoration:'none', color:'inherit'}} to='/'>Shop{menu==="shop"?<hr />:<></>}</Link></li>
+        <li onClick={()=>{setMenu("men")}}><Link style={{textDecoration:'none', color:'inherit'}} to='/mens'>Men{menu==="men"?<hr />:<></>}</Link></li>
+        <li onClick={()=>{setMenu("women")}}><Link style={{textDecoration:'none', color:'inherit'}} to='/womens'>Women{menu==="women"?<hr />:<></>}</Link></li>
+        <li onClick={()=>{setMenu("kids")}}><Link style={{textDecoration:'none', color:'inherit'}} to='/kids'>Kids{menu==="kids"?<hr />:<></>}</Link></li>
       </ul>
       <div className='nav-login-cart'>
         {localStorage.getItem('auth-token')

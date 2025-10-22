@@ -5,7 +5,7 @@
     margin:auto;
     padding:0px 140px;
     margin-bottom:150px;
-    background: linear-gradient(180deg, #fde1ff, #e1ffea22 60%);
+    background: linear-gradient(180deg, rgb(251,180,121), #f6dde822 80%);
 }
 .offers-left{
     flex:1;
@@ -14,12 +14,12 @@
     justify-content:center;
 }
 .offers-left h1{
-    color:#171717;
+    color:rgba(65, 61, 61, 1);
     font-size:50px;
     font-weight:600;
 }
 .offers-left p{
-    color:#171717;
+    color:rgba(65, 61, 61, 1);
     font-size:22px;
     font-weight:600;
 }
@@ -27,13 +27,16 @@
     width:282px;
     height:70px;
     border-radius:35px;
-    background:#ff4141;
+    background:#FFB6B6;
     border:none;
-    color:white;
+    color:black;
     font-size:22px;
     font-weight:500;
     margin-top:30px;
     cursor:pointer;
+}
+.offers-left button:hover{
+    background:rgb(251,180,121);
 }
 .offers-right{
     flex:1;

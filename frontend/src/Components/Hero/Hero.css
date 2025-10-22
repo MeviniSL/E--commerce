@@ -1,6 +1,6 @@
 .hero{
     height:100vh;
-    background: linear-gradient(180deg, #fde1ff, #e1ffea22 60%);
+    background: rgb(251,180,121); 
     display: flex;
     margin-bottom:120px;
 }
@@ -14,14 +14,14 @@
     line-height: 1.1;
 }
 .hero-left h2{
-    color:#090909;
+    color: #80796aff; 
     font-size: 26px;
     font-weight: 600;
 }
 .hero-left p{
-    color:#171717;
-    font-size: 100px;
-    font-weight: 700;
+    color: #1E1E1E;
+    font-size: 90px;
+    font-weight: 300;
 }
 .hero-hand-icon{
     display: flex;
@@ -40,10 +40,16 @@
     height:70px;
     border-radius:75px;
     margin-top:30px;
-    background:#ff4141;
-    color:white;
+    background: #FFB6B6; /* accent blush */
+    color: #1E1E1E; /* text color matches theme */
     font-size:22px;
     font-weight:500;
+    box-shadow: 0 6px 20px rgba(197, 163, 90, 0.15); /* subtle gold glow */
+}
+.hero-lastest-btn:hover {
+    background: #C5A35A; /* gold hover */
+    color: #F8F8F8; /* white text on hover */
+    transform: scale(1.05);
 }
 .hero-right{
     flex:1;
@@ -51,6 +57,9 @@
     justify-content: center;
     align-items: center;
 }
+.hero-right img{
+        width:800px;
+    }
 @media(max-width:1280px){
     .hero-left{
         padding-left:100px;
@@ -140,4 +149,24 @@
         height:45px;
         font-size:14px;
     }
+}
+
+.animated-text {
+  min-height: 1.5em; /* Prevents layout shift */
+  display: inline-block;
+}
+
+.cursor {
+  animation: blink 0.7s infinite;
+  font-weight: 100;
+  color: #ff5a5a;
+}
+
+@keyframes blink {
+  0%, 49% {
+    opacity: 1;
+  }
+  50%, 100% {
+    opacity: 0;
+  }
 }
