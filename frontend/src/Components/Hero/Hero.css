@@ -150,3 +150,23 @@
         font-size:14px;
     }
 }
+
+.animated-text {
+  min-height: 1.5em; /* Prevents layout shift */
+  display: inline-block;
+}
+
+.cursor {
+  animation: blink 0.7s infinite;
+  font-weight: 100;
+  color: #ff5a5a;
+}
+
+@keyframes blink {
+  0%, 49% {
+    opacity: 1;
+  }
+  50%, 100% {
+    opacity: 0;
+  }
+}

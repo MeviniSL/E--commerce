@@ -36,25 +36,16 @@ const ProductDisplay = (props) => {
           <div className="productdisplay-right-price-new">Rs {product.new_price}</div>
         </div>
         <div className="productdisplay-right-description">
-          Durable, soft, and lightweight jacket with a comfortable fit and long-lasting quality.
+          All products are free size and fit for L and XL sizes. We hope to provide customized sizes in the future to better suit your needs.
         </div>
         <div className="product-display-right-size">
           <h1>Select Size</h1>
           <div className="productdisplay-right-sizes">
-            <div>S</div>
-            <div>M</div>
-            <div>L</div>
-            <div>XL</div>
-            <div>XXL</div>
+            <div>Free Size</div>
           </div>
         </div>
         <button onClick={()=>{addToCart(product.id)}}>ADD TO CART</button>
-        <p className="productdisplay-right-category">
-          <span>Category:</span>Women, t shirt, crop top
-        </p>
-        <p className="productdisplay-right-category">
-          <span>Tags: </span>Women, t shirt, crop top
-        </p>
+        
       </div>
     </div>
   )
