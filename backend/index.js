@@ -355,7 +355,7 @@ app.post('/createorder', fetchUser, async (req, res) => {
       .text('Invoice Number:', 50, y)
       .font('Helvetica')
       .fillColor('#666')
-      .text(`#Rs {order._id.toString().slice(-8).toUpperCase()}`, 140, y);
+      .text(` ${order._id.toString().slice(-8).toUpperCase()}`, 140, y);
 
     y += 12;
     doc
@@ -418,8 +418,8 @@ app.post('/createorder', fetchUser, async (req, res) => {
         .fillColor('#333')
         .text(item.name, 60, y)
         .text(item.quantity.toString(), 310, y)
-        .text(`$Rs {item.price.toFixed(2)}`, 370, y)
-        .text(`$Rs {item.total.toFixed(2)}`, 460, y);
+        .text(`Rs ${item.price.toFixed(2)}`, 370, y)
+        .text(`Rs ${item.total.toFixed(2)}`, 460, y);
       y += 20;
     });
 
@@ -438,7 +438,7 @@ app.post('/createorder', fetchUser, async (req, res) => {
       .text('Subtotal:', 370, y)
       .font('Helvetica-Bold')
       .fillColor('#333')
-      .text(`$Rs {subtotal.toFixed(2)}`, 470, y);
+      .text(`Rs ${subtotal.toFixed(2)}`, 470, y);
 
     y += 15;
     doc
@@ -458,7 +458,7 @@ app.post('/createorder', fetchUser, async (req, res) => {
       .font('Helvetica-Bold')
       .fillColor('#FF5A5A')
       .text('TOTAL', 380, y + 7)
-      .text(`$Rs {total.toFixed(2)}`, 470, y + 7);
+      .text(`Rs ${total.toFixed(2)}`, 470, y + 7);
 
     // 🔹 THANK YOU FOOTER
     doc
