@@ -7,6 +7,9 @@ const multer = require("multer");
 const path = require("path");
 const cors = require("cors");
 const { type } = require("os");
+const PDFDocument = require('pdfkit'); 
+const fs = require('fs');                
+
 
 app.use(express.json());
 app.use(cors());
@@ -14,14 +17,10 @@ app.use(cors());
 //Database Connection with MongoDB
 mongoose.connect("mongodb+srv://mevini:mevinisilva123@cluster0.3vgkh6b.mongodb.net/ecommerceDB?retryWrites=true&w=majority&appName=Cluster0/e-commerce") 
 
-
 //API Creation
-
 app.get("/",(req,res)=>{
     res.send("Express App is Running")
-
 })
-
 
 //image storage
 const storage = multer.diskStorage({
@@ -43,7 +42,7 @@ app.post("/upload",upload.single('product'),(req,res)=>{
     })
 })
 
-// Scema fro creating product
+// Schema for creating product
 const Product = mongoose.model("Product",{
     id:{
         type: Number,
@@ -52,7 +51,6 @@ const Product = mongoose.model("Product",{
     name:{
         type: String,
         required:true,
-
     },
     image:{
         type: String,
@@ -78,15 +76,12 @@ const Product = mongoose.model("Product",{
         type: Boolean,
         default:true,
     }
-
 })
 
 app.post('/addproduct', async (req, res) => {
   try {
-    // Find all existing products to generate a new ID
     const products = await Product.find({});
     let id;
-
     if (products.length > 0) {
       const lastProduct = products.slice(-1)[0];
       id = lastProduct.id + 1;
@@ -94,7 +89,6 @@ app.post('/addproduct', async (req, res) => {
       id = 1;
     }
 
-    // Create the product
     const product = new Product({
       id,
       name: req.body.name,
@@ -106,17 +100,12 @@ app.post('/addproduct', async (req, res) => {
 
     await product.save();
     console.log("Product saved:", product);
-
-    // Send JSON response
     res.json({ success: true, message: "Product added successfully" });
   } catch (error) {
     console.error("Error adding product:", error);
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 });
-
-
-
 
 //creating middleware to fetch user
 const fetchUser = async (req,res,next)=>{
@@ -129,20 +118,13 @@ const fetchUser = async (req,res,next)=>{
             const data = jwt.verify(token,'secret_ecom');
             req.user = data.user;
             next();
-
         }catch(error){
             res.status(401).send({errors:"Please authenticate using valid token"})
-
         }
     }
-
 }
 
-
-
-
 // creating api for deleting product
-
 app.post('/removeproduct',async (req,res)=>{
     await Product.findOneAndDelete({id:req.body.id});
     console.log("Removed");
@@ -150,9 +132,7 @@ app.post('/removeproduct',async (req,res)=>{
         success:true,
         name:req.body.name
     })
-
 })
-
 
 //Creating api for getting all products
 app.get('/allproducts',async (req,res)=>{
@@ -160,7 +140,6 @@ app.get('/allproducts',async (req,res)=>{
     console.log("All Products Fetched");
     res.send(products);
 })
-
 
 //schema creating for user model
 const Users = mongoose.model('Users',{
@@ -183,10 +162,7 @@ const Users = mongoose.model('Users',{
     }
 })
 
-
-
-// Add this after the Users schema
-
+// Order Schema with Delivery Address and Payment Method
 const Order = mongoose.model('Order', {
   userId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -196,6 +172,7 @@ const Order = mongoose.model('Order', {
   items: [{
     productId: Number,
     name: String,
+    size: String,
     quantity: Number,
     price: Number,
     total: Number
@@ -208,78 +185,35 @@ const Order = mongoose.model('Order', {
   },
   status: {
     type: String,
-    enum: ['Pending', 'Payment Uploaded', 'Verified', 'Completed', 'Cancelled'],
+    enum: ['Pending', 'Payment Uploaded', 'Cash on Delivery', 'Verified', 'Completed', 'Cancelled'],
     default: 'Pending'
+  },
+  paymentMethod: {
+    type: String,
+    enum: ['Bank Transfer', 'COD'],
+    default: 'Bank Transfer'
   },
   receiptUrl: String,
   customerName: String,
-  customerEmail: String
-});
-// Add these endpoints
+  customerEmail: String,
+  deliveryAddress: {
+    fullName: String,
+    address: String,
+    city: String,
+    postalCode: String,
+    phone: String
+  },
 
-const PDFDocument = require('pdfkit');
-const fs = require('fs');
+  invoiceData: {
+    type: Buffer  // Store PDF as binary data
+  },
+  invoiceGenerated: {
+    type: Boolean,
+    default: false
+  }
+});
 
 // Create Order and Generate Invoice
-/*app.post('/createorder', fetchUser, async (req, res) => {
-  try {
-    const user = await Users.findById(req.user.id);
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
-    }
-
-    const { items, subtotal, total } = req.body;
-
-    // Create order
-    const order = new Order({
-      userId: user._id,
-      items,
-      subtotal,
-      total,
-      customerName: user.name,
-      customerEmail: user.email,
-      status: 'Pending'
-    });
-
-    await order.save();
-
-    // Generate PDF Invoice
-    const doc = new PDFDocument();
-    const invoicePath = `./upload/invoices/invoice_${order._id}.pdf`;
-
-    // Create invoices directory if it doesn't exist
-    if (!fs.existsSync('./upload/invoices')) {
-      fs.mkdirSync('./upload/invoices', { recursive: true });
-    }
-
-    doc.pipe(fs.createWriteStream(invoicePath));
-
-    // Add content to PDF
-    doc.fontSize(20).text('INVOICE', { align: 'center' });
-    doc.moveDown();
-    doc.fontSize(12).text(`Order ID: ${order._id}`);
-    doc.text(`Customer: ${user.name}`);
-    doc.text(`Email: ${user.email}`);
-    doc.text(`Date: ${new Date().toLocaleDateString()}`);
-    doc.moveDown();
-
-    doc.text('Items:', { underline: true });
-    items.forEach((item, index) => {
-      doc.text(`${index + 1}. ${item.name} x ${item.quantity} = $${item.total}`);
-    });
-
-    doc.moveDown();
-    doc.text(`Subtotal: $${subtotal}`);
-    doc.text(`Total: $${total}`, { bold: true });
-
-    doc.end();
-
-    res.json({ success: true, orderId: order._id });
-  } catch (error) {
-    console.error('Error creating order:', error);
-    res.status(500).json({ success: false, message: 'Internal server error' });
-  }
-});*/// ✅ Create Order and Generate One-Page Invoice
 app.post('/createorder', fetchUser, async (req, res) => {
   try {
     const user = await Users.findById(req.user.id);
@@ -289,7 +223,6 @@ app.post('/createorder', fetchUser, async (req, res) => {
 
     const { items, subtotal, total } = req.body;
 
-    // Create order in DB
     const order = new Order({
       userId: user._id,
       items,
@@ -302,22 +235,37 @@ app.post('/createorder', fetchUser, async (req, res) => {
 
     await order.save();
 
-    // ✅ Create compact, single-page PDF
+    // CHANGE: Generate PDF in memory instead of file
     const doc = new PDFDocument({
       margin: 50,
       size: 'A4'
     });
-    const invoicePath = `./upload/invoices/invoice_${order._id}.pdf`;
 
-    // Create directory if not exists
-    if (!fs.existsSync('./upload/invoices')) {
-      fs.mkdirSync('./upload/invoices', { recursive: true });
-    }
+    // CHANGE: Store PDF chunks in array instead of file
+    const chunks = [];
 
-    const stream = fs.createWriteStream(invoicePath);
-    doc.pipe(stream);
+    doc.on('data', (chunk) => {
+      chunks.push(chunk);
+    });
 
-    // 🔹 HEADER
+    doc.on('end', async () => {
+      try {
+        // CHANGE: Combine chunks into Buffer and save to database
+        const pdfBuffer = Buffer.concat(chunks);
+        
+        order.invoiceData = pdfBuffer;
+        order.invoiceGenerated = true;
+        await order.save();
+
+        console.log('✅ Invoice saved to database for order:', order._id);
+        res.json({ success: true, orderId: order._id });
+      } catch (error) {
+        console.error('Error saving invoice to database:', error);
+        res.status(500).json({ success: false, message: 'Failed to save invoice' });
+      }
+    });
+
+    // PDF GENERATION CODE (same as before)
     doc
       .fontSize(26)
       .font('Helvetica-Bold')
@@ -337,7 +285,6 @@ app.post('/createorder', fetchUser, async (req, res) => {
       .fillColor('#333')
       .text('INVOICE', 400, 50, { align: 'right' });
 
-    // Divider line
     doc
       .strokeColor('#ddd')
       .lineWidth(1)
@@ -345,7 +292,6 @@ app.post('/createorder', fetchUser, async (req, res) => {
       .lineTo(550, 115)
       .stroke();
 
-    // 🔹 INVOICE INFO
     let y = 130;
 
     doc
@@ -375,7 +321,6 @@ app.post('/createorder', fetchUser, async (req, res) => {
       .fillColor('#666')
       .text(order._id.toString(), 140, y);
 
-    // 🔹 CUSTOMER INFO
     y = 130;
     doc
       .font('Helvetica-Bold')
@@ -391,7 +336,6 @@ app.post('/createorder', fetchUser, async (req, res) => {
       .fillColor('#666')
       .text(user.email, 350, y);
 
-    // 🔹 ITEM TABLE HEADER
     y = 190;
     doc
       .rect(50, y, 500, 20)
@@ -408,9 +352,8 @@ app.post('/createorder', fetchUser, async (req, res) => {
 
     y += 25;
 
-    // 🔹 ITEMS
     items.forEach((item, index) => {
-      if (y > 550) return; // stop to keep 1 page only
+      if (y > 550) return;
       const bg = index % 2 === 0 ? '#FAFAFA' : '#FFF';
       doc.rect(50, y - 3, 500, 20).fill(bg);
       doc
@@ -423,7 +366,6 @@ app.post('/createorder', fetchUser, async (req, res) => {
       y += 20;
     });
 
-    // 🔹 TOTALS
     y += 10;
     doc
       .strokeColor('#ddd')
@@ -460,7 +402,6 @@ app.post('/createorder', fetchUser, async (req, res) => {
       .text('TOTAL', 380, y + 7)
       .text(`Rs ${total.toFixed(2)}`, 470, y + 7);
 
-    // 🔹 THANK YOU FOOTER
     doc
       .fontSize(10)
       .font('Helvetica-Oblique')
@@ -470,16 +411,8 @@ app.post('/createorder', fetchUser, async (req, res) => {
         width: 500
       });
 
+    // CHANGE: End document to trigger 'end' event
     doc.end();
-
-    stream.on('finish', () => {
-      res.json({ success: true, orderId: order._id });
-    });
-
-    stream.on('error', (err) => {
-      console.error('Invoice generation error:', err);
-      res.status(500).json({ success: false, message: 'Failed to generate invoice' });
-    });
 
   } catch (error) {
     console.error('Error creating order:', error);
@@ -487,28 +420,33 @@ app.post('/createorder', fetchUser, async (req, res) => {
   }
 });
 
-
-
-
-
-
-// Download Invoice
+// Download Invoice from Database
 app.get('/invoice/:orderId', async (req, res) => {
   try {
-    const invoicePath = `./upload/invoices/invoice_${req.params.orderId}.pdf`;
+    const order = await Order.findById(req.params.orderId);
     
-    if (fs.existsSync(invoicePath)) {
-      res.download(invoicePath);
-    } else {
-      res.status(404).json({ success: false, message: 'Invoice not found' });
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
     }
+
+    if (!order.invoiceData || !order.invoiceGenerated) {
+      return res.status(404).json({ success: false, message: 'Invoice not generated yet' });
+    }
+
+    // Send PDF from database
+    res.contentType('application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=invoice_${order._id}.pdf`);
+    res.send(order.invoiceData);
+
   } catch (error) {
     console.error('Error downloading invoice:', error);
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
-// Add multer configuration for receipt uploads
 
+
+
+// Receipt upload configuration
 const receiptStorage = multer.diskStorage({
   destination: './upload/receipts',
   filename: (req, file, cb) => {
@@ -518,38 +456,72 @@ const receiptStorage = multer.diskStorage({
 
 const receiptUpload = multer({ storage: receiptStorage });
 
-// Create receipts directory
 if (!fs.existsSync('./upload/receipts')) {
   fs.mkdirSync('./upload/receipts', { recursive: true });
 }
 
-// Upload Receipt
+// Upload Receipt with Delivery Details
 app.post('/uploadreceipt', fetchUser, receiptUpload.single('receipt'), async (req, res) => {
   try {
-    const { orderId } = req.body;
+    const { orderId, deliveryDetails } = req.body;
 
     const order = await Order.findById(orderId);
     if (!order) {
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
 
-    // Check if order belongs to the user
     if (order.userId.toString() !== req.user.id) {
       return res.status(403).json({ success: false, message: 'Unauthorized' });
     }
 
     order.receiptUrl = `http://localhost:${port}/receipts/${req.file.filename}`;
     order.status = 'Payment Uploaded';
+    order.paymentMethod = 'Bank Transfer';
+    
+    if (deliveryDetails) {
+      const parsedDetails = JSON.parse(deliveryDetails);
+      order.deliveryAddress = parsedDetails;
+    }
+    
     await order.save();
 
-    res.json({ success: true, message: 'Receipt uploaded successfully' });
+    res.json({ success: true, message: 'Receipt and delivery details uploaded successfully' });
   } catch (error) {
     console.error('Error uploading receipt:', error);
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
-// Serve receipt files
+// Cash on Delivery Endpoint
+app.post('/cash-on-delivery', fetchUser, async (req, res) => {
+  try {
+    const { orderId, deliveryDetails } = req.body;
+
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    if (order.userId.toString() !== req.user.id) {
+      return res.status(403).json({ success: false, message: 'Unauthorized' });
+    }
+
+    order.status = 'Cash on Delivery';
+    order.paymentMethod = 'COD';
+    
+    if (deliveryDetails) {
+      order.deliveryAddress = deliveryDetails;
+    }
+    
+    await order.save();
+
+    res.json({ success: true, message: 'Cash on Delivery confirmed with delivery details' });
+  } catch (error) {
+    console.error('Error processing COD:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
 app.use('/receipts', express.static('upload/receipts'));
 
 // Get all orders (for admin)
@@ -584,17 +556,8 @@ app.put('/orders/:id', async (req, res) => {
   }
 });
 
-
-
-
-
-
-
-
-
 //creating endpoint for registering user
 app.post('/signup',async(req,res)=>{
-
     let check = await Users.findOne({email:req.body.email});
     if(check){
         return res.status(400).json({success:false,errors:"existing user found with same email address"})
@@ -618,11 +581,9 @@ app.post('/signup',async(req,res)=>{
         }
     }
 
-    const token = jwt.sign(data,'sercret_ecom');
+    const token = jwt.sign(data,'secret_ecom');
     res.json({success:true,token})
 })
-
-
 
 //creating endpoint for login user
 app.post('/login',async(req,res)=>{
@@ -647,16 +608,13 @@ app.post('/login',async(req,res)=>{
     }
 })
 
-
 //creating endpoint for newcollections data
 app.get('/newcollections',async (req,res)=>{
     let products = await Product.find({});
     let newcollection = products.slice(1).slice(-8); 
     console.log("New Collection Fetched");
     res.send(newcollection);
-
 })
-
 
 //creating endpoint for popular in women section
 app.get('/popularinwomen',async(req,res)=>{
@@ -666,8 +624,6 @@ app.get('/popularinwomen',async(req,res)=>{
     res.send(popular_in_women);
 })
 
-
-
 //creating endpoint for adding products in cartdata
 app.post('/addtocart',fetchUser,async (req,res)=>{
     console.log("added",req.body.itemId);
@@ -675,7 +631,6 @@ app.post('/addtocart',fetchUser,async (req,res)=>{
    userData.cartData[req.body.itemId] +=1;
    await Users.findOneAndUpdate({_id:req.user.id},{cartData:userData.cartData}); 
    res.send("Added")
-
 })
 
 //creating endpoint to remove product from cart data
@@ -688,38 +643,75 @@ app.post('/removefromcart',fetchUser,async (req,res)=>{
    res.send("Removed")
 })
 
-//creating endpoint to get cart data
 
-/*addEventListener.post('/getcart',fetchUser,async(req,res)=>{
-    console.log("get cart");
-    let userData = await Users.findOne({_id:req.user.id});
-    res.json(userData.cartData);
-})*/
-app.post('/getcart', fetchUser, async (req, res) => {
+
+app.post('/clearcart', fetchUser, async (req, res) => {
   try {
-    // Your logic for fetching the cart
-    const userId = req.user.id; // Assuming `fetchUser` middleware adds `req.user`
+    console.log('Clear cart request received for user:', req.user.id);
+    
+    const userId = req.user.id;
     const user = await Users.findById(userId);
+    
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
-    res.json(user.cartData);
+
+    // Clear cart data - reset to default
+    let cart = {};
+    for (let i = 0; i < 300; i++) {
+      cart[i] = 0;
+    }
+    
+    user.cartData = cart;
+    await user.save();
+    
+    console.log('✅ Cart cleared successfully for user:', userId);
+    res.json({ success: true, message: 'Cart cleared successfully' });
   } catch (error) {
-    console.error('Error fetching cart:', error);
+    console.error('❌ Error clearing cart:', error);
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
 
+// DELETE order endpoint - Add this after the PUT /orders/:orderId endpoint
+app.delete('/orders/:orderId', async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    
+    console.log('Delete request for order:', orderId);
+    
+    const deletedOrder = await Order.findByIdAndDelete(orderId);
+    
+    if (!deletedOrder) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Order not found' 
+      });
+    }
+    
+    console.log('✅ Order deleted successfully:', orderId);
+    res.json({ 
+      success: true, 
+      message: 'Order deleted successfully',
+      deletedOrder 
+    });
+  } catch (error) {
+    console.error('❌ Error deleting order:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Internal server error' 
+    });
+  }
+});
 
-
+// ...existing code...
 
 app.listen(port,(error)=>{
     if(!error){
-                console.log("Server is Successfully Running,and App is listening on port "+ port)
+        console.log("Server is Successfully Running,and App is listening on port "+ port)
     }
     else{
         console.log("Error occurred, server can't start", error);
     }
-
 })
