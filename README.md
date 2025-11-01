@@ -1,34 +1,129 @@
-# E-commerce
-StreetSoul Clothing Store
 
-StreetSoul is an online clothing store built with the MERN stack. It allows users to browse products, add items to the cart, upload payment receipts, and download order receipts. Admins can manage orders, view user details, and verify payments. The project is fully responsive for both mobile and desktop.
+---
 
-Features
+# StreetSoul Clothing Store
 
-User Authentication: Secure login/signup with JWT.
+StreetSoul is a modern **online clothing store** built with the **MERN stack (MongoDB, Express.js, React.js, Node.js)**. It provides a smooth and secure shopping experience, allowing users to browse products, add items to their cart, upload payment receipts, and download order receipts. The admin panel allows store managers to manage orders, view customer details, and verify payments. The website is fully responsive, working seamlessly on both mobile and desktop devices.
 
-Browse Products: Filter products by category.
+---
 
-Shopping Cart: Add products to the cart.
+## 🌟 Features
 
-Payment Handling: Users can upload payment receipts and download order receipts.
+* **🔐 User Authentication:** Secure login/signup with JWT.
+* **🛍️ Browse Products:** Filter products by category for easy navigation.
+* **🛒 Shopping Cart:** Add, view, and manage products in the cart.
+* **💳 Payment Handling:** Users can upload payment receipts and download order invoices.
+* **🧑‍💼 Admin Panel:** Admins can manage orders, view customer details, and verify payments.
+* **📱 Responsive Design:** Optimized for both desktop and mobile devices.
 
-Admin Panel: Admin can login to manage orders and view customer payment details.
+---
 
-Responsive Design: Works on both desktop and mobile devices.
+## 🧑‍💼 Admin Login Credentials
 
-Admin Login Credentials:
+* **Email:** [admin@gmail.com](mailto:admin@gmail.com)
+* **Password:** admin@123
 
-Email: admin@gmail.com
+---
 
-Password: admin@123
+## 💻 Tech Stack
 
-Tech Stack
+* **Frontend:** React.js, CSS
+* **Backend:** Node.js, Express.js
+* **Database:** MongoDB
+* **Authentication:** JWT
 
-Frontend: React.js, CSS
+---
 
-Backend: Node.js, Express.js
+## 🗂️ Project Structure
 
-Database: MongoDB
+```
+E-COMMERCE
+│
+├── admin
+│   ├── node_modules
+│   ├── public
+│   ├── src
+│   ├── .gitignore
+│   ├── index.html
+│   ├── package.json
+│   └── vite.config.js
+│
+├── backend
+│   ├── node_modules
+│   ├── upload
+│   ├── .gitignore
+│   ├── index.js
+│   └── package.json
+│
+├── frontend
+│   ├── node_modules
+│   ├── public
+│   ├── src
+│   ├── .gitignore
+│   └── package.json
+│
+└── README.md
+```
 
-Authentication: JWT
+---
+
+## 🚀 Getting Started
+
+### 1. Clone the Repository
+
+```bash
+git clone <your-repo-link>
+cd E-COMMERCE
+```
+
+### 2. Install Dependencies
+
+**Frontend:**
+
+```bash
+cd frontend
+npm install
+```
+
+**Backend:**
+
+```bash
+cd backend
+npm install
+```
+
+**Admin Panel:**
+
+```bash
+cd admin
+npm install
+```
+
+### 3. Run the Project
+
+**Frontend:**
+
+```bash
+npm start
+```
+
+**Backend:**
+
+```bash
+node index.js
+```
+
+**Admin Panel:**
+
+```bash
+npm run dev
+```
+
+---
+
+## 📄 License
+
+This project is licensed under the **MIT License**.
+
+---
+
